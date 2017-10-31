@@ -4,6 +4,8 @@ description: This tutorial will show you how to manage tokens to make authentica
 budicon: 546
 ---
 
+You may want to restrict access to your API resources, so that only authenticated users with sufficient privileges can access them. Auth0 lets you manage access to these resources using [API Authorization](/api-auth).
+
 <%= include('../../../_includes/_package', {
   org: 'auth0-samples',
   repo: 'auth0-ios-objc-sample',
@@ -19,21 +21,25 @@ The reason for implementing authentication, in the first place, is to protect in
 
 In this tutorial, you'll learn how to get a token, attach it to a request (using the authorization header), and call any API you need to authenticate with.
 
-## Get the user's credentials
+Before you continue with this tutorial, make sure that you have completed the previous tutorials. This tutorial assumes that:
+* You have completed the [Session Handling](/quickstart/native/ios-objc/03-user-sessions) tutorial and you know how to handle the `Credentials` object.
+* You have set up a backend application as API. To learn how to do it, follow one of the [backend tutorials](/quickstart/backend).
 
-In order to make an authenticated request, you first need to obtain a token, against which your API can compare to detect whether or not the request is properly authenticated.
+<%= include('_includes/_calling_api_create_api') %>
 
-You should already know how to get an [Credentials](https://github.com/auth0/Auth0.swift/blob/master/Auth0/Credentials.swift) instance from the [Login Guide](/quickstart/native/ios-swift/00-login). Anyway, here's a quick recap:
+<%= include('_includes/_calling_api_create_scope') %>__
 
-${snippet(meta.snippets.setup)}
+## Get the User's Access Token
 
-Then present the hosted login screen, like this:
+To retrieve an access token that is authorized to access your API, you need to specify the **API Identifier** value you created in the [Auth0 APIs Dashboard](https://manage.auth0.com/#/apis).
+
+Present the Hosted Login Page:
 
 ```objc
 // HomeViewController.m
 
 HybridAuth *auth = [[HybridAuth alloc] init];
-[auth showLoginWithScope:@"openid profile" connection:nil callback:^(NSError * _Nullable error, A0Credentials * _Nullable credentials) {
+[auth showLoginWithScope:@"openid profile" connection:nil audience:"API_IDENTIFIER" callback:^(NSError * _Nullable error, A0Credentials * _Nullable credentials) {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (error) {
             NSLog(@"Error: %@", error);
@@ -45,17 +51,15 @@ HybridAuth *auth = [[HybridAuth alloc] init];
 }];
 ```
 
-In order to make authenticated requests, you can use any of the token strings inside that `Credentials` instance you just obtained. Which one depends on the application usage.
+## Attach the Access Token
 
-## Attach the Token
-
-Supposing you need to use the `accessToken` value, here is what you would do:
+To give the authenticated user access to secured resources in your API, include the user's access token in the requests you send to the API.
 
 ```objc
 // ProfileViewController.m
 
 NSString* token = ... // The accessToken you stored after authentication
-NSString *url = @"https://localhost/api"; // Change to your API
+NSString *url = @"https://localhost/api"; // Set to your Protected API URL
 NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:[NSURL URLWithString:url]];
 // Configure your request here (method, body, etc)
 
