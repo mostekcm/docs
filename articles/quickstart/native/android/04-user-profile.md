@@ -37,7 +37,14 @@ WebAuthProvider.init(auth0)
 
 ## Request User Data
 
-Create instances of the API clients. You will use them to request the users' profile data.
+
+To get the user's information:
+1. Use the user's access token to call the `userInfo` method in the `AuthenticationAPIClient` client instance.
+The profile obtained this way is OIDC-conformant. Depending on the [scopes](/scopes/current) you requested when logging in, the profile contains different information. The result will never contain fields outside the OIDC specification.
+2. Get the user's full profile using the [Management API](/api/management/v2#!/Users). This step is explained next:
+
+
+Create an instance of the Users API client using the Id token obtained in the log in step. You will use this client to request the users' profile data.
 
 ```java
 // app/src/main/java/com/auth0/samples/activities/MainActivity.java
@@ -45,39 +52,66 @@ Create instances of the API clients. You will use them to request the users' pro
 Auth0 auth0 = new Auth0(this);
 auth0.setOIDCConformant(true);
 
-String idToken = CredentialsManager.getCredentials(this).getIdToken();
-UsersAPIClient usersClient = new UsersAPIClient(auth0, idToken);
-AuthenticationAPIClient authClient = new AuthenticationAPIClient(auth0);
+CredentialsManager credentialsManager = new CredentialsManager(new AuthenticationAPIClient(auth0), new SharedPreferencesStorage(this));
+credentialsManager.getCredentials(new BaseCallback<Credentials, CredentialsManagerException>() {
+
+    @Override
+    public void onSuccess(Credentials credentials) {
+        String idToken = credentials.getIdToken();
+        UsersAPIClient usersClient = new UsersAPIClient(auth0, idToken);
+        //...
+    }
+
+    @Override
+    public void onFailure(CredentialsManagerException error) {
+        //Credentials expired. Log in again
+    }
+});
 ```
 
 ::: note
-Do not hardcode the Auth0 `domain` and `clientId` values. We recommend you add them to the `strings.xml` file.
+Do not hardcode the Auth0 `domain` and `clientId` values when creating the Auth0 instance. We recommend you add them to the `strings.xml` file.
 :::
 
-To get the user's information:
-1. Use the user's access token to call the `userInfo` method in the `AuthenticationAPIClient` client instance.
-You get an instance of the `UserProfile` profile. The profile is OIDC-conformant. Depending on the on the [scopes](/scopes/current) you requested, the profile contains different information. 
-2. To get the user's full profile, use the [Management API](/api/management/v2#!/Users).
+
+Decode the Id Token using a [JWT library](https://github.com/auth0/JWTDecode.Android) and obtain the Subject value, which represents the id of the user to whom the token was issued.
 
 ```java
 // app/src/main/java/com/auth0/samples/activities/MainActivity.java
 
-String accessToken = CredentialsManager.getCredentials(this).getAccessToken();
-authenticationClient.userInfo(accessToken)
-    .start(new BaseCallback<UserProfile, AuthenticationException>() {
-
-        @Override
-        public void onSuccess(final UserProfile userInfo) {
-            String userId = userInfo.getId();
-            // fetch the full user profile
-        }
-
-        @Override
-        public void onFailure(AuthenticationException error) {
-            //show error
-        }
-    });
+private String getUserId(String idToken) {
+    return new JWT(idToken).getSubject();
+}
 ```
+
+Use the user id to call `getProfile` on the Users API client in order to obtain the full user profile.
+
+```java
+// app/src/main/java/com/auth0/samples/activities/MainActivity.java
+
+usersClient.getProfile(getUserId(idToken))
+  .start(new BaseCallback<UserProfile, ManagementException>() {
+      @Override
+      public void onSuccess(UserProfile profile) {
+          userProfile = profile;
+          runOnUiThread(new Runnable() {
+              public void run() {
+                  refreshScreenInformation();
+              }
+          });
+      }
+
+      @Override
+      public void onFailure(ManagementException error) {
+          runOnUiThread(new Runnable() {
+              public void run() {
+                  Toast.makeText(MainActivity.this, "User Profile Request Failed", Toast.LENGTH_SHORT).show();
+              }
+          });
+      }
+  });
+```
+
 
 When you get the `sub` value, call the [Management API](https://auth0.com/docs/api/management/v2#!/Users).
 
@@ -159,7 +193,7 @@ Map<String, Object> userMetadata = new HashMap<>();
 userMetadata.put("country", "USA");
 ```
 
-Update the information with the `UsersAPIClient` client:
+Update the information with the User API client:
 
 ```java
 // app/src/main/java/com/auth0/samples/activities/MainActivity.java
