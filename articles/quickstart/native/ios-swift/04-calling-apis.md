@@ -19,7 +19,7 @@ You may want to restrict access to your API resources, so that only authenticate
 
 The reason for implementing authentication, in the first place, is to protect information. In this case, your information is a resource served from a server of any sort. Auth0 provides a squad of tools to assist you with end-to-end authentication in an application. We recommend that you conform to RFC standards by sending valid authentication tokens through an authorization header.
 
-In this tutorial, you'll learn how to get a token, attach it to a request (using the authorization header), and call any API you need to authenticate with.
+In this tutorial, you'll learn how to get a token, attach it to a request (using the authorization header), and call any API you need to authenticate with. 
 
 Before you continue with this tutorial, make sure that you have completed the previous tutorials. This tutorial assumes that:
 * You have completed the [Session Handling](/quickstart/native/ios-swift/03-user-sessions) tutorial and you know how to handle the `Credentials` object.
