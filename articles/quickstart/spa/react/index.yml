@@ -21,3 +21,7 @@ articles:
   - 03-calling-an-api
   - 04-authorization
   - 05-token-renewal
+author:
+  name: Ariel Gerstein
+  email: ariel.gerstein@auth0.com
+  internal: true

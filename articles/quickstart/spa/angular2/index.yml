@@ -21,3 +21,8 @@ articles:
   - 03-calling-an-api
   - 04-authorization
   - 05-token-renewal
+author:
+  name: Ryan Chenkie
+  email: ryan.chenkie@auth0.com
+  internal: false
+repo: auth0-angular-samples
